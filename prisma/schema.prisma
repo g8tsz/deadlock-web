@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  city      String?
+  state     String?
+  country   String?  @default("USA")
+  lat       Float?
+  lng       Float?
+  thisSeason Boolean @default(false)
+  teams     Team[]
+  createdAt DateTime @default(now())
+}
+
+model Team {
+  id           String   @id @default(cuid())
+  tag          String
+  fullName     String
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  logoUrl      String?
+  captains     TeamCaptain[]
+  staff        TeamStaff[]
+  eventTeams   EventTeam[]
+  matchesAs1   Match[]  @relation("MatchTeam1")
+  matchesAs2   Match[]  @relation("MatchTeam2")
+  createdAt    DateTime @default(now())
+}
+
+model TeamCaptain {
+  id             String @id @default(cuid())
+  teamId         String
+  team           Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  discordUsername String
+}
+
+model TeamStaff {
+  id             String @id @default(cuid())
+  teamId         String
+  team           Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  discordUsername String
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  startDate   DateTime?
+  endDate     DateTime?
+  type        String?  // "season", "show match", etc.
+  description String?
+  streamUrl   String?
+  vodUrl      String?
+  isCurrent   Boolean  @default(false)
+  eventTeams  EventTeam[]
+  matches     Match[]
+  createdAt   DateTime @default(now())
+}
+
+model EventTeam {
+  id         String  @id @default(cuid())
+  eventId    String
+  event      Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId     String
+  team       Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  placement  Int?
+  score      Float?
+  seed       Float?
+  rankLabel  String? // e.g. "Eternus 6", "Phantom 6"
+  groupName  String? // "Group 1", "Group 2"
+  displayOrder Int?
+}
+
+model Match {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team1Id     String
+  team1       Team     @relation("MatchTeam1", fields: [team1Id], references: [id], onDelete: Cascade)
+  team2Id     String
+  team2       Team     @relation("MatchTeam2", fields: [team2Id], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  label       String?  // e.g. "Week 2", "Week 3"
+  score1      Int?
+  score2      Int?
+  streamUrl   String?
+  vodUrl      String?
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  discordId     String?   @unique // set from Discord provider in callbacks
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+  @@unique([identifier, token])
+}

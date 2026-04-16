@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --deadlock-dark: #1a120b;
+  --deadlock-card: #251a12;
+  --deadlock-surface: #2d2118;
+  --deadlock-brown: #3d2817;
+  --deadlock-gold: #c9a227;
+  --deadlock-gold-light: #d4af37;
+  --deadlock-muted: #a09080;
+  --deadlock-cream: #f5f0e8;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: #1a120b;
+    color: #f5f0e8;
+  }
+  main {
+    background-color: #1a120b;
+  }
+  a {
+    color: #c9a227;
+  }
+  a:hover {
+    color: #d4af37;
+  }
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--deadlock-gold);
+    outline-offset: 2px;
+  }
+  h1, h2, h3 {
+    color: #ffffff;
+  }
+}
+
+/* Leaflet map container */
+.leaflet-container {
+  background: var(--deadlock-card) !important;
+  border-radius: 0.5rem;
+}
+
+/* Deadlock-style section labels */
+.section-label {
+  @apply text-xs font-semibold uppercase tracking-[0.2em] text-deadlock-gold mb-2;
+}
+
+.section-title {
+  @apply text-2xl font-bold text-white;
+}
+
+/* Consistent page content area */
+.page-content {
+  min-height: calc(100vh - 4rem);
+  background-color: #1a120b;
+}

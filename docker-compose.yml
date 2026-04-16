@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: college_deadlock
+      POSTGRES_PASSWORD: college_deadlock
+      POSTGRES_DB: college_deadlock
+    ports:
+      - "5432:5432"
+    volumes:
+      - college_deadlock_pgdata:/var/lib/postgresql/data
+
+volumes:
+  college_deadlock_pgdata:
