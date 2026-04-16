@@ -34,8 +34,8 @@ In `.env` set:
 | Variable | Purpose |
 | -------- | ------- |
 | `NEXT_PUBLIC_SITE_URL` | Canonical public URL (sitemap, Open Graph). On Vercel, `VERCEL_URL` is a fallback if unset. |
-| `NEXTAUTH_URL` | Must match your live origin (e.g. `https://your-domain.com`) so Discord OAuth works. |
-| `FORMS_DISCORD_WEBHOOK_URL` | [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) for contact + newsletter. **Required in production** for forms to succeed; local dev logs submissions instead. |
+| `NEXTAUTH_URL` | Must match the origin users hit (scheme + host, no trailing slash), e.g. `https://your-domain.com`. **Vercel preview URLs** each have a different host: add each preview URL to Discord OAuth redirects, or use production-only sign-in. |
+| `FORMS_DISCORD_WEBHOOK_URL` | [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) for contact + newsletter. Host must be `discord.com` or `discordapp.com`. **Required in production** for forms to succeed; local dev logs submissions instead. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` | Optional [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) — set **both** to require a solved widget on forms. |
 | `BOT_INGEST_ALLOWED_IPS` | Optional comma-separated IPs allowed to call ingest APIs after bearer auth (see [docs/INGEST.md](docs/INGEST.md)). |
 
@@ -50,7 +50,7 @@ Open the URL Next.js prints (e.g. [http://localhost:3000](http://localhost:3000)
 ## Vercel / production
 
 1. Create a **Postgres** database (Vercel Postgres, Neon, Supabase, etc.) and set `DATABASE_URL` in the project environment.
-2. Build command can stay `npm run vercel-build` (runs `prisma migrate deploy`, `prisma generate`, `next build`) or align with your host’s docs. For SQLite-only previews, `npm run build` may be enough if you do not run migrations against Postgres there.
+2. **Build command**: use `npm run vercel-build` when `DATABASE_URL` is **Postgres** (runs `prisma migrate deploy` then build). For **SQLite-only** preview branches, override the install command to `npm run build` (or a branch env without Postgres) so `migrate deploy` does not run against a missing DB.
 3. Set **`NEXTAUTH_URL`** and **`NEXT_PUBLIC_SITE_URL`** to `https://your-domain`, and add Discord OAuth redirect `https://your-domain/api/auth/callback/discord`.
 4. Set **`FORMS_DISCORD_WEBHOOK_URL`** for live form delivery; add Turnstile keys if you want CAPTCHA on forms.
 
@@ -60,6 +60,8 @@ Open the URL Next.js prints (e.g. [http://localhost:3000](http://localhost:3000)
 - **Events / schools / schedule**: Data-driven from Prisma
 - **News**: List at `/news` and articles at `/news/[slug]`
 - **404 / errors**: `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx`
+- **Privacy**: `/privacy` (linked in the footer)
+- **Security headers**: root `middleware.ts` sets `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, and a minimal `Permissions-Policy`
 - **Sign in with Discord**: Optional when Discord app credentials are set
 - **Bot ingest API**: `POST /api/ingest/match` and `/api/ingest/standings` — see [docs/INGEST.md](docs/INGEST.md)
 
@@ -82,6 +84,11 @@ Open the URL Next.js prints (e.g. [http://localhost:3000](http://localhost:3000)
 ## News content
 
 Articles are defined in `lib/news-posts.ts`. For a CMS or MDX later, replace that module with your content pipeline.
+
+## Dependencies and audits
+
+- **`sharp`** is included so `next/image` optimization works reliably in Node deployments (recommended by Next.js).
+- Run `npm audit` periodically. Some reported issues (e.g. in `eslint-config-next` / `next` dev tooling) may only fix with **major** upgrades (`npm audit fix --force`); treat those as planned upgrades, not blind bumps.
 
 ## License
 

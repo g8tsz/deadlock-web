@@ -20,4 +20,9 @@ test.describe("smoke", () => {
     await page.goto("/this-route-should-not-exist-12345");
     await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible();
   });
+
+  test("privacy page", async ({ page }) => {
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { name: /^Privacy$/i })).toBeVisible();
+  });
 });

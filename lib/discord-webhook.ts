@@ -1,10 +1,16 @@
 /** College Deadlock gold #c9a227 */
 const EMBED_COLOR = 0xc9a227;
 
+const WEBHOOK_HOSTS = new Set(["discord.com", "discordapp.com"]);
+
 function isDiscordWebhookUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return u.protocol === "https:" && u.hostname === "discord.com" && u.pathname.startsWith("/api/webhooks/");
+    return (
+      u.protocol === "https:" &&
+      WEBHOOK_HOSTS.has(u.hostname) &&
+      u.pathname.startsWith("/api/webhooks/")
+    );
   } catch {
     return false;
   }

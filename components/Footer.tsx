@@ -65,6 +65,7 @@ export default function Footer() {
             <ul className="mt-3 space-y-2">
               <li><Link href="/contact" className="text-deadlock-muted hover:text-deadlock-gold text-sm transition">Contact us</Link></li>
               <li><Link href="/faq" className="text-deadlock-muted hover:text-deadlock-gold text-sm transition">FAQ</Link></li>
+              <li><Link href="/privacy" className="text-deadlock-muted hover:text-deadlock-gold text-sm transition">Privacy</Link></li>
               <li><Link href="/events" className="text-deadlock-muted hover:text-deadlock-gold text-sm transition">Events</Link></li>
               <li><Link href="/schedule" className="text-deadlock-muted hover:text-deadlock-gold text-sm transition">Schedule</Link></li>
             </ul>
