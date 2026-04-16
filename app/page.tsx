@@ -32,6 +32,8 @@ function TeamLogo({ team, school }: { team: { tag: string; logoUrl?: string | nu
     <div className="flex flex-col items-center">
       <div className="h-10 w-10 shrink-0 rounded-lg bg-deadlock-surface border border-deadlock-brown flex items-center justify-center overflow-hidden">
         {team.logoUrl ? (
+          // External team logos use arbitrary CDN hosts; plain img avoids allowlisting every host.
+          // eslint-disable-next-line @next/next/no-img-element -- dynamic third-party logo URLs
           <img src={team.logoUrl} alt="" width={40} height={40} className="h-full w-full object-contain" />
         ) : (
           <span className="text-deadlock-gold font-bold text-sm">{team.tag.slice(0, 2)}</span>

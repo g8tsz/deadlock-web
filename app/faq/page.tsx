@@ -162,7 +162,7 @@ export default function FAQPage() {
               key={q}
               className="group rounded-xl border border-deadlock-brown bg-deadlock-card/60 open:bg-deadlock-card open:border-deadlock-gold/40 transition"
             >
-              <summary className="cursor-pointer list-none px-5 py-4 flex items-start justify-between gap-4">
+              <summary className="list-none px-5 py-4 flex items-start justify-between gap-4 [&::-webkit-details-marker]:hidden">
                 <span className="text-white font-semibold">{q}</span>
                 <span
                   aria-hidden

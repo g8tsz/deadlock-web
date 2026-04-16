@@ -49,6 +49,7 @@ export default async function SchoolPage({
       </Link>
       <header className="mb-8 flex flex-wrap items-start gap-6">
         {school.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- dynamic third-party logo URLs
           <img
             src={school.logoUrl}
             alt=""
@@ -77,6 +78,7 @@ export default async function SchoolPage({
             >
               <div className="flex flex-wrap items-center gap-4">
                 {team.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- dynamic third-party logo URLs
                   <img
                     src={team.logoUrl}
                     alt=""

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { getSiteUrl } from "@/lib/site";
+import { getAllNewsSlugs } from "@/lib/news-posts";
 
 export const revalidate = 3600;
 
@@ -35,10 +36,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.event.findMany({ select: { slug: true } }),
     ]);
   } catch {
-    return staticRoutes;
+    const newsOnly: MetadataRoute.Sitemap = getAllNewsSlugs().map((slug) => ({
+      url: `${base}/news/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.55,
+    }));
+    return [...staticRoutes, ...newsOnly];
   }
 
+  const newsSlugs = getAllNewsSlugs();
+  const newsEntries: MetadataRoute.Sitemap = newsSlugs.map((slug) => ({
+    url: `${base}/news/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.55,
+  }));
+
   const dynamic: MetadataRoute.Sitemap = [
+    ...newsEntries,
     ...schools.map((s) => ({
       url: `${base}/schools/${s.slug}`,
       lastModified: new Date(),

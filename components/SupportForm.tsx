@@ -15,6 +15,7 @@ export default function SupportForm() {
   const [form, setForm] = useState<FormState>(empty);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -24,11 +25,12 @@ export default function SupportForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const name = form.name.trim();
     const email = form.email.trim();
     const message = form.message.trim();
+    const company = form.company.trim();
 
     if (!name || !email || !message) {
       setStatus("error");
@@ -41,8 +43,35 @@ export default function SupportForm() {
       return;
     }
 
-    setStatus("success");
-    setForm(empty);
+    setSubmitting(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          ...(company ? { company } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        setStatus("error");
+        setErrorMsg(data.error ?? "Something went wrong. Try Discord or email us later.");
+        return;
+      }
+
+      setStatus("success");
+      setForm(empty);
+    } catch {
+      setStatus("error");
+      setErrorMsg("Network error. Check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -54,7 +83,8 @@ export default function SupportForm() {
         placeholder="Name"
         aria-label="Name"
         required
-        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none"
+        disabled={submitting}
+        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none disabled:opacity-60"
       />
       <input
         type="text"
@@ -62,7 +92,8 @@ export default function SupportForm() {
         onChange={(e) => update("company", e.target.value)}
         placeholder="Company or school (optional)"
         aria-label="Company or school"
-        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none"
+        disabled={submitting}
+        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none disabled:opacity-60"
       />
       <input
         type="email"
@@ -71,7 +102,8 @@ export default function SupportForm() {
         placeholder="Email"
         aria-label="Email"
         required
-        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none"
+        disabled={submitting}
+        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none disabled:opacity-60"
       />
       <textarea
         value={form.message}
@@ -80,13 +112,15 @@ export default function SupportForm() {
         aria-label="Message"
         rows={4}
         required
-        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none resize-none"
+        disabled={submitting}
+        className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none resize-none disabled:opacity-60"
       />
       <button
         type="submit"
-        className="w-full rounded-lg bg-deadlock-gold py-3 font-semibold text-deadlock-dark hover:bg-deadlock-gold-light transition"
+        disabled={submitting}
+        className="w-full rounded-lg bg-deadlock-gold py-3 font-semibold text-deadlock-dark hover:bg-deadlock-gold-light transition disabled:opacity-60"
       >
-        Get in touch
+        {submitting ? "Sending…" : "Get in touch"}
       </button>
 
       {status === "success" && (
@@ -94,8 +128,7 @@ export default function SupportForm() {
           role="status"
           className="rounded-lg border border-deadlock-gold/40 bg-deadlock-gold/10 px-4 py-3 text-sm text-deadlock-cream"
         >
-          Thanks for reaching out — we&apos;ll get back to you soon. For a faster
-          response, you can also ping us in{" "}
+          Thanks for reaching out — we&apos;ll get back to you soon. For a faster response, you can also ping us in{" "}
           <a
             href="https://discord.gg/college-deadlock"
             target="_blank"

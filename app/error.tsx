@@ -16,7 +16,7 @@ export default function Error({
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 bg-deadlock-dark text-deadlock-cream">
       <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
-      <p className="text-deadlock-muted text-center max-w-md mb-6">
+      <p className="text-deadlock-muted text-center max-w-md mb-4">
         The page couldn&apos;t load. If you just set up the project, run{" "}
         <code className="bg-deadlock-card px-2 py-1 rounded text-deadlock-gold text-sm">
           npx prisma db push
@@ -27,7 +27,20 @@ export default function Error({
         </code>{" "}
         in the project folder, then refresh.
       </p>
+      <p className="text-deadlock-muted text-center max-w-md text-sm mb-6">
+        Need help? Ask in{" "}
+        <a
+          href="https://discord.gg/college-deadlock"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-deadlock-gold hover:text-deadlock-gold-light font-semibold"
+        >
+          Discord
+        </a>
+        .
+      </p>
       <button
+        type="button"
         onClick={reset}
         className="rounded-lg bg-deadlock-gold px-6 py-3 font-semibold text-deadlock-dark hover:bg-deadlock-gold-light transition"
       >
