@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getBearerToken, verifyIngestSecret } from "@/lib/ingest-auth";
 import { upsertSchool, upsertTeam } from "@/lib/ingest-helpers";
 import { matchIngestSchema } from "@/lib/schemas/ingest";
+import { assertIngestIpAllowed } from "@/lib/ingest-allowlist";
 
 export async function POST(request: Request) {
   if (!process.env.BOT_INGEST_SECRET?.trim()) {
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
   if (!verifyIngestSecret(token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const ipBlock = assertIngestIpAllowed(request);
+  if (ipBlock) return ipBlock;
 
   let body: unknown;
   try {

@@ -1,6 +1,6 @@
 # College Deadlock Website
 
-Collegiate Deadlock esports site: schools map, current/past events, teams, Discord login, and optional form notifications via Discord webhook.
+Collegiate Deadlock esports site: schools map, current/past events, teams, Discord login, optional form notifications (Discord webhook), optional Turnstile on forms, and ingest APIs for the Discord bot.
 
 Repository: [github.com/g8tsz/deadlock-web](https://github.com/g8tsz/deadlock-web)
 
@@ -29,10 +29,15 @@ In `.env` set:
 - `DISCORD_CLIENT_SECRET`
 - `NEXTAUTH_SECRET` (e.g. `openssl rand -base64 32`)
 
-### 3. Site URL and forms
+### 3. Production checklist (URLs and forms)
 
-- Set **`NEXT_PUBLIC_SITE_URL`** to your canonical public URL in production (used for sitemap and Open Graph). On Vercel, `VERCEL_URL` is used as a fallback if this is unset.
-- **Contact and newsletter forms** POST to `/api/contact` and `/api/newsletter`. Configure **`FORMS_DISCORD_WEBHOOK_URL`** with a [Discord incoming webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) URL so submissions appear in a channel. Without it, production form endpoints return 503; in **development**, submissions are logged to the server console instead.
+| Variable | Purpose |
+| -------- | ------- |
+| `NEXT_PUBLIC_SITE_URL` | Canonical public URL (sitemap, Open Graph). On Vercel, `VERCEL_URL` is a fallback if unset. |
+| `NEXTAUTH_URL` | Must match your live origin (e.g. `https://your-domain.com`) so Discord OAuth works. |
+| `FORMS_DISCORD_WEBHOOK_URL` | [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) for contact + newsletter. **Required in production** for forms to succeed; local dev logs submissions instead. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` | Optional [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) — set **both** to require a solved widget on forms. |
+| `BOT_INGEST_ALLOWED_IPS` | Optional comma-separated IPs allowed to call ingest APIs after bearer auth (see [docs/INGEST.md](docs/INGEST.md)). |
 
 ### 4. Run
 
@@ -45,17 +50,18 @@ Open the URL Next.js prints (e.g. [http://localhost:3000](http://localhost:3000)
 ## Vercel / production
 
 1. Create a **Postgres** database (Vercel Postgres, Neon, Supabase, etc.) and set `DATABASE_URL` in the project environment.
-2. Build command can stay `npm run vercel-build` (runs `prisma migrate deploy`, `prisma generate`, `next build`) or align with your host’s docs.
-3. Set `NEXTAUTH_URL` to your live site URL, Discord OAuth redirect to `https://your-domain/api/auth/callback/discord`, and `NEXT_PUBLIC_SITE_URL` to `https://your-domain`.
-4. Set `FORMS_DISCORD_WEBHOOK_URL` if you want contact/newsletter deliveries.
+2. Build command can stay `npm run vercel-build` (runs `prisma migrate deploy`, `prisma generate`, `next build`) or align with your host’s docs. For SQLite-only previews, `npm run build` may be enough if you do not run migrations against Postgres there.
+3. Set **`NEXTAUTH_URL`** and **`NEXT_PUBLIC_SITE_URL`** to `https://your-domain`, and add Discord OAuth redirect `https://your-domain/api/auth/callback/discord`.
+4. Set **`FORMS_DISCORD_WEBHOOK_URL`** for live form delivery; add Turnstile keys if you want CAPTCHA on forms.
 
 ## Features
 
 - **Home**: Upcoming matches, current standings, CTAs
 - **Events / schools / schedule**: Data-driven from Prisma
 - **News**: List at `/news` and articles at `/news/[slug]`
+- **404 / errors**: `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx`
 - **Sign in with Discord**: Optional when Discord app credentials are set
-- **Bot ingest API**: `POST /api/ingest/match` and `/api/ingest/standings` with `Authorization: Bearer <BOT_INGEST_SECRET>` — see [docs/INGEST.md](docs/INGEST.md)
+- **Bot ingest API**: `POST /api/ingest/match` and `/api/ingest/standings` — see [docs/INGEST.md](docs/INGEST.md)
 
 ## Data
 
@@ -64,13 +70,18 @@ Open the URL Next.js prints (e.g. [http://localhost:3000](http://localhost:3000)
 
 ## Scripts
 
-| Script            | Purpose                          |
-| ----------------- | -------------------------------- |
-| `npm run dev`     | Next.js dev server               |
-| `npm run build`   | `prisma generate` + `next build` |
-| `npm run lint`    | ESLint                           |
-| `npm run db:push` | Push schema (dev SQLite)         |
-| `npm run db:seed` | Run seed                         |
+| Script | Purpose |
+| ------ | ------- |
+| `npm run dev` | Next.js dev server |
+| `npm run build` | `prisma generate` + `next build` |
+| `npm run lint` | ESLint |
+| `npm run test:e2e` | Playwright smoke tests (requires `npm run build` then `npm run start`, or let Playwright start the server — see `playwright.config.ts`) |
+| `npm run db:push` | Push schema (dev SQLite) |
+| `npm run db:seed` | Run seed |
+
+## News content
+
+Articles are defined in `lib/news-posts.ts`. For a CMS or MDX later, replace that module with your content pipeline.
 
 ## License
 

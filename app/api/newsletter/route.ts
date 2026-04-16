@@ -3,6 +3,8 @@ import { newsletterBodySchema } from "@/lib/schemas/forms";
 import { allowFormSubmit } from "@/lib/form-rate-limit";
 import { getFormsDiscordWebhookUrl, sendFormToDiscordWebhook } from "@/lib/discord-webhook";
 import { getClientIp } from "@/lib/request-ip";
+import { assertTurnstileIfConfigured } from "@/lib/forms-guard";
+import { logApiError, logApiWarning } from "@/lib/api-log";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -19,8 +21,11 @@ export async function POST(request: Request) {
 
   const parsed = newsletterBodySchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
+
+  const turnstileBlock = await assertTurnstileIfConfigured(parsed.data.turnstileToken, ip);
+  if (turnstileBlock) return turnstileBlock;
 
   const { email } = parsed.data;
   const webhookUrl = getFormsDiscordWebhookUrl();
@@ -30,6 +35,7 @@ export async function POST(request: Request) {
       console.info("[newsletter] (no FORMS_DISCORD_WEBHOOK_URL)", email);
       return NextResponse.json({ ok: true, dev: true });
     }
+    logApiWarning("/api/newsletter", "FORMS_DISCORD_WEBHOOK_URL not set");
     return NextResponse.json({ error: "Newsletter signup is not configured on this server." }, { status: 503 });
   }
 
@@ -38,6 +44,7 @@ export async function POST(request: Request) {
   ]);
 
   if (!result.ok) {
+    logApiError("/api/newsletter", "Discord webhook failed", result.error);
     return NextResponse.json({ error: "Could not save signup. Try again later." }, { status: 502 });
   }
 

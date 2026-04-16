@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import TurnstileField from "@/components/TurnstileField";
 
 type FormState = {
   name: string;
@@ -11,11 +12,16 @@ type FormState = {
 
 const empty: FormState = { name: "", company: "", email: "", message: "" };
 
+const needsTurnstileWidget = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
+
 export default function SupportForm() {
+  const hpRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(empty);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -31,6 +37,13 @@ export default function SupportForm() {
     const email = form.email.trim();
     const message = form.message.trim();
     const company = form.company.trim();
+    const hp = hpRef.current?.value?.trim() ?? "";
+
+    if (hp) {
+      setStatus("error");
+      setErrorMsg("Something went wrong. Please try again.");
+      return;
+    }
 
     if (!name || !email || !message) {
       setStatus("error");
@@ -40,6 +53,12 @@ export default function SupportForm() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setStatus("error");
       setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+
+    if (needsTurnstileWidget && !turnstileToken) {
+      setStatus("error");
+      setErrorMsg("Complete the security check below the form.");
       return;
     }
 
@@ -53,7 +72,9 @@ export default function SupportForm() {
           name,
           email,
           message,
+          website_url: "",
           ...(company ? { company } : {}),
+          ...(turnstileToken ? { turnstileToken } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -61,21 +82,35 @@ export default function SupportForm() {
       if (!res.ok) {
         setStatus("error");
         setErrorMsg(data.error ?? "Something went wrong. Try Discord or email us later.");
+        setTurnstileToken(null);
+        setTurnstileKey((k) => k + 1);
         return;
       }
 
       setStatus("success");
       setForm(empty);
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     } catch {
       setStatus("error");
       setErrorMsg("Network error. Check your connection and try again.");
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+    <form className="relative space-y-4" onSubmit={handleSubmit} noValidate>
+      <input
+        ref={hpRef}
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0"
+      />
       <input
         type="text"
         value={form.name}
@@ -115,6 +150,13 @@ export default function SupportForm() {
         disabled={submitting}
         className="w-full rounded-lg border border-deadlock-brown bg-deadlock-surface px-4 py-3 text-white placeholder-deadlock-muted focus:border-deadlock-gold focus:outline-none resize-none disabled:opacity-60"
       />
+
+      <TurnstileField
+        resetKey={turnstileKey}
+        onToken={(t) => setTurnstileToken(t)}
+        onExpire={() => setTurnstileToken(null)}
+      />
+
       <button
         type="submit"
         disabled={submitting}
